@@ -1,0 +1,88 @@
+services:
+  go-app:
+    container_name: go-app
+    build: .
+    volumes:
+      - .:/app  # Mount local code into the container
+    environment:
+      DATABASE_URL: "host=go_db user=postgres password=postgres dbname=postgres sslmode=disable"
+      MONGO_URI: "mongodb://abcd:secret@mongo_db:27017/"
+      RABBITMQ_URI: "amqp://guest:guest@rabbitmq:5672/"
+
+    ports:
+      - "8000:8000"
+    depends_on:
+      - go_db
+      - mongo_db
+      - mongo_express
+      - rabbitmq
+    restart: always
+    command: ["air", "-c", ".air.toml"]  # Ensure Air runs on startup
+    networks:
+      - app-network
+
+
+  go_db:
+    container_name: go_db
+    image: postgres:12
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  
+  mongo_db:
+    container_name: mongo_db
+    image: mongo:latest
+    # restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=abcd
+      - MONGO_INITDB_ROOT_PASSWORD=secret
+    volumes:
+      - mongodata:/data/db
+    networks:
+      - app-network
+
+
+  mongo_express:
+    container_name: mongo_express
+    image: mongo-express
+    # restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=abcd
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=secret
+      - ME_CONFIG_MONGODB_URL=mongodb://abcd:secret@mongo_db:27017/
+    depends_on:
+      - mongo_db
+    networks:
+      - app-network
+  
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:latest
+    ports:
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # Management UI port
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - app-network
+
+volumes:  
+  pgdata: {}
+  mongodata: {}
+
+networks:
+  app-network:
+    driver: bridge

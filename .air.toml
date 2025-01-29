@@ -1,0 +1,24 @@
+# Air configuration file
+
+# Working directory
+root = "."
+
+# Temporary binary location
+tmp_dir = "tmp"
+
+# Build settings
+[build]
+  bin = "tmp/main"
+  cmd = "go build -o tmp/main ."
+  exclude_dir = ["tmp", "vendor", "node_modules"]
+  include_ext = ["go", "tpl", "tmpl", "html"]
+
+# Run settings
+[run]
+  cmd = "./tmp/main"
+  watch_delay = "500ms"
+  kill_signal = "SIGTERM"
+
+# Log settings
+[log]
+  level = "debug"
