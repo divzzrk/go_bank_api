@@ -120,7 +120,7 @@ func main() {
 		var account_id string
 
 		if qt.Type == "deposit" || qt.Type == "withdrawal" || qt.Type == "transfer" {
-			if qt.Type == "deposit" {
+			if qt.Type == "deposit" || qt.Type == "withdrawal" {
 				account_id = qt.AccountID
 			} else {
 				account_id = qt.ToAccountID
