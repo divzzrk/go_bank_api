@@ -221,7 +221,11 @@ func createUser(c *gin.Context, db *sql.DB) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
+	log.Printf("Received user: %+v", user)
+	if len(user.Username) < 5 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Username must be at least 5 characters"})
+		return
+	}
 	if !validatePhone(user.Phone) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid phone number"})
 		return
