@@ -13,9 +13,11 @@ const (
 
 // QueuedTransaction represents a transaction message
 type QueuedTransaction struct {
-	AccountID string  `json:"account_id"`
-	Type      string  `json:"type"`
-	Amount    float64 `json:"amount"`
+	AccountID     string  `json:"account_id,omitempty"`
+	FromAccountID string  `json:"from_account_id,omitempty"`
+	ToAccountID   string  `json:"to_account_id,omitempty"`
+	Type          string  `json:"type"`
+	Amount        float64 `json:"amount"`
 }
 
 // RabbitMQ connection wrapper

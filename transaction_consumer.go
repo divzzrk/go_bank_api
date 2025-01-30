@@ -79,9 +79,23 @@ func (tc *TransactionConsumer) processTransaction(qt QueuedTransaction) error {
 	defer tx.Rollback()
 
 	var currentBalance float64
-	err = tx.QueryRow("SELECT balance FROM users WHERE account_id = $1 FOR UPDATE", qt.AccountID).Scan(&currentBalance)
+	var toAccountBalance float64
+	var account_id string
+	if qt.Type == "transfer" {
+		account_id = qt.FromAccountID
+	} else {
+		account_id = qt.AccountID
+	}
+	err = tx.QueryRow("SELECT balance FROM users WHERE account_id = $1 FOR UPDATE", account_id).Scan(&currentBalance)
 	if err != nil {
 		return err
+	}
+
+	if qt.Type == "transfer" {
+		err := tx.QueryRow("SELECT balance FROM users WHERE account_id = $1", qt.ToAccountID).Scan(&toAccountBalance)
+		if err != nil {
+			return err
+		}
 	}
 
 	var newBalance float64
@@ -93,29 +107,61 @@ func (tc *TransactionConsumer) processTransaction(qt QueuedTransaction) error {
 			return fmt.Errorf("insufficient balance")
 		}
 		newBalance = currentBalance - qt.Amount
+	case "transfer":
+		newBalance = currentBalance - qt.Amount
+		toAccountBalance += qt.Amount
+		log.Printf("Processing transfer: %f - %f = %f", currentBalance, qt.Amount, newBalance)
+
 	default:
 		return fmt.Errorf("invalid transaction type")
 	}
-
+	if qt.Type != "transfer" {
+		account_id = qt.AccountID
+	} else {
+		account_id = qt.FromAccountID
+	}
 	// Update balance
-	_, err = tx.Exec("UPDATE users SET balance = $1 WHERE account_id = $2", newBalance, qt.AccountID)
+	_, err = tx.Exec("UPDATE users SET balance = $1 WHERE account_id = $2", newBalance, account_id)
 	if err != nil {
 		return err
 	}
 
+	if qt.Type == "transfer" {
+		_, err = tx.Exec("UPDATE users SET balance = $1 WHERE account_id = $2", toAccountBalance, qt.ToAccountID)
+		if err != nil {
+			return err
+		}
+	}
+	if qt.Type != "transfer" {
+
+	}
 	// Log transaction in MongoDB
 	transactionLog := TransactionLog{
-		AccountID:      qt.AccountID,
 		Type:           qt.Type,
 		Amount:         qt.Amount,
 		CreatedAt:      time.Now(),
 		CurrentBalance: newBalance,
 	}
 
+	if qt.Type != "transfer" {
+		transactionLog.AccountID = qt.AccountID
+	} else {
+		transactionLog.FromAccountID = qt.FromAccountID
+		transactionLog.ToAccountID = qt.ToAccountID
+		transactionLog.AccountID = qt.FromAccountID
+	}
 	_, err = tc.mongoCollection.InsertOne(context.TODO(), transactionLog)
 	if err != nil {
 		return err
 	}
+	if qt.Type == "transfer" {
+		transactionLog.AccountID = qt.ToAccountID
+		_, err = tc.mongoCollection.InsertOne(context.TODO(), transactionLog)
+		if err != nil {
+			return err
+		}
+	}
 
 	return tx.Commit()
+
 }
