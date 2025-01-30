@@ -42,8 +42,29 @@ This is a backend service for a banking ledger that manages transactions, accoun
   "amount": 50000
 ### Withdraw Amount
 - `POST /transaction` - Deposit amount to your account.
+- Throws insuffient balance if there is no sufficient balance
 - ```
   "account_id": "331491007",
   "type": "withdrawal",
   "amount": 500
-  
+### Transfer Amount
+- `POST /transaction` - To transfer amount from one account to another.
+- Throws insuffient balance if there is no sufficient balance
+- Both the account ids should be valid else a 404 error stating account not found will be thrown
+- ```
+  "from_account_id": "331491007",
+  "to_account_id": "323477227",
+  "type": "transfer",
+  "amount": 500
+### Get Transaction Details
+- `GET /transaction/:account_id` - Get transaction details for an account.
+- Throws insuffient balance if there is no sufficient balance
+- Both the account ids should be valid else a 404 error stating account not found will be thrown
+- ```
+  http://localhost:8000/transaction/your_account_id
+### Get All Users
+- `GET /transaction/:account_id` - Get transaction details for an account.
+- Throws insuffient balance if there is no sufficient balance
+- Both the account ids should be valid else a 404 error stating account not found will be thrown
+- ```
+  http://localhost:8000/transaction/your_account_id
