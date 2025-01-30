@@ -63,8 +63,6 @@ This is a backend service for a banking ledger that manages transactions, accoun
 - ```
   http://localhost:8000/transaction/your_account_id
 ### Get All Users
-- `GET /transaction/:account_id` - Get transaction details for an account.
-- Throws insuffient balance if there is no sufficient balance
-- Both the account ids should be valid else a 404 error stating account not found will be thrown
+- `GET /users` - Get all the users.
 - ```
-  http://localhost:8000/transaction/your_account_id
+  http://localhost:8000/users
